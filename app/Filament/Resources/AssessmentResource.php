@@ -6,6 +6,8 @@ use App\Filament\Resources\AssessmentResource\Pages;
 use App\Models\Assessment;
 use Filament\Forms;
 use Filament\Forms\Form;
+use Filament\Infolists; // PENTING: Import Infolist
+use Filament\Infolists\Infolist; // PENTING
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -15,7 +17,7 @@ class AssessmentResource extends Resource
 {
     protected static ?string $model = Assessment::class;
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-check';
-    protected static ?string $navigationLabel = 'Record Penilaian'; // Sesuai Use Case
+    protected static ?string $navigationLabel = 'Record Penilaian';
 
     public static function form(Form $form): Form
     {
@@ -23,14 +25,11 @@ class AssessmentResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Informasi Penilaian')
                     ->schema([
-                        // Pilih Jadwal (Use Case Mengelola Jadwal)
                         Forms\Components\Select::make('schedule_id')
                             ->relationship('schedule', 'name', fn($query) => $query->where('is_active', true))
                             ->label('Periode Penilaian')
                             ->required()
                             ->default(fn() => \App\Models\Schedule::where('is_active', true)->latest()->first()?->id),
-
-                        // Pilih Karyawan
                         Forms\Components\Select::make('employee_id')
                             ->relationship('employee', 'name')
                             ->label('Nama Karyawan')
@@ -42,21 +41,11 @@ class AssessmentResource extends Resource
                 Forms\Components\Section::make('Input Kriteria Penilaian (Metode SMART)')
                     ->description('Masukkan nilai 0 sampai 100.')
                     ->schema([
-                        Forms\Components\TextInput::make('c1_capacity_plan')
-                            ->label('C1 - Capacity Plan')
-                            ->numeric()->minValue(0)->maxValue(100)->required(),
-                        Forms\Components\TextInput::make('c2_kedisiplinan')
-                            ->label('C2 - Kedisiplinan')
-                            ->numeric()->minValue(0)->maxValue(100)->required(),
-                        Forms\Components\TextInput::make('c3_pengetahuan')
-                            ->label('C3 - Pengetahuan')
-                            ->numeric()->minValue(0)->maxValue(100)->required(),
-                        Forms\Components\TextInput::make('c4_loyalitas')
-                            ->label('C4 - Loyalitas')
-                            ->numeric()->minValue(0)->maxValue(100)->required(),
-                        Forms\Components\TextInput::make('c5_team_work')
-                            ->label('C5 - Team Work')
-                            ->numeric()->minValue(0)->maxValue(100)->required(),
+                        Forms\Components\TextInput::make('c1_capacity_plan')->label('C1 - Capacity Plan')->numeric()->minValue(0)->maxValue(100)->required(),
+                        Forms\Components\TextInput::make('c2_kedisiplinan')->label('C2 - Kedisiplinan')->numeric()->minValue(0)->maxValue(100)->required(),
+                        Forms\Components\TextInput::make('c3_pengetahuan')->label('C3 - Pengetahuan')->numeric()->minValue(0)->maxValue(100)->required(),
+                        Forms\Components\TextInput::make('c4_loyalitas')->label('C4 - Loyalitas')->numeric()->minValue(0)->maxValue(100)->required(),
+                        Forms\Components\TextInput::make('c5_team_work')->label('C5 - Team Work')->numeric()->minValue(0)->maxValue(100)->required(),
                     ])->columns(2),
             ]);
     }
@@ -65,14 +54,8 @@ class AssessmentResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('schedule.name')
-                    ->label('Periode')
-                    ->sortable()
-                    ->badge(), // Tampilan badge agar menarik
-                Tables\Columns\TextColumn::make('employee.name')
-                    ->label('Nama Karyawan')
-                    ->searchable()
-                    ->sortable(),
+                Tables\Columns\TextColumn::make('schedule.name')->label('Periode')->sortable()->badge(),
+                Tables\Columns\TextColumn::make('employee.name')->label('Nama Karyawan')->searchable()->sortable(),
                 Tables\Columns\TextColumn::make('final_score')
                     ->label('Nilai Akhir (SMART)')
                     ->sortable()
@@ -84,14 +67,12 @@ class AssessmentResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('created_at')->label('Tanggal Input')->date(),
             ])
-            ->defaultSort('final_score', 'desc') // Otomatis Ranking
+            ->defaultSort('final_score', 'desc')
             ->filters([
-                // Fitur Laporan: Filter berdasarkan Periode Jadwal
-                SelectFilter::make('schedule_id')
-                    ->relationship('schedule', 'name')
-                    ->label('Filter Periode'),
+                SelectFilter::make('schedule_id')->relationship('schedule', 'name')->label('Filter Periode'),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(), // PENTING: Tombol Mata (Lihat Detail)
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])
@@ -99,6 +80,39 @@ class AssessmentResource extends Resource
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
                 ]),
+            ]);
+    }
+
+    // --- BAGIAN BARU: TAMPILAN DETAIL (INFOLIST) ---
+    public static function infolist(Infolist $infolist): Infolist
+    {
+        return $infolist
+            ->schema([
+                Infolists\Components\Section::make('Hasil Penilaian Kinerja')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('schedule.name')->label('Periode'),
+                        Infolists\Components\TextEntry::make('employee.name')->label('Nama Karyawan'),
+                        Infolists\Components\TextEntry::make('employee.nip')->label('NIP'),
+                        Infolists\Components\TextEntry::make('created_at')->label('Tanggal Penilaian')->date(),
+                    ])->columns(2),
+
+                Infolists\Components\Section::make('Rincian Skor Kriteria')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('c1_capacity_plan')->label('C1 - Capacity Plan'),
+                        Infolists\Components\TextEntry::make('c2_kedisiplinan')->label('C2 - Kedisiplinan'),
+                        Infolists\Components\TextEntry::make('c3_pengetahuan')->label('C3 - Pengetahuan'),
+                        Infolists\Components\TextEntry::make('c4_loyalitas')->label('C4 - Loyalitas'),
+                        Infolists\Components\TextEntry::make('c5_team_work')->label('C5 - Team Work'),
+                    ])->columns(5),
+
+                Infolists\Components\Section::make('Total Skor Akhir')
+                    ->schema([
+                        Infolists\Components\TextEntry::make('final_score')
+                            ->label('SKOR SMART')
+                            ->size(Infolists\Components\TextEntry\TextEntrySize::Large)
+                            ->weight('bold')
+                            ->color('primary'),
+                    ]),
             ]);
     }
 
@@ -113,6 +127,7 @@ class AssessmentResource extends Resource
             'index' => Pages\ListAssessments::route('/'),
             'create' => Pages\CreateAssessment::route('/create'),
             'edit' => Pages\EditAssessment::route('/{record}/edit'),
+            'view' => Pages\ViewAssessment::route('/{record}'), // PENTING: Route View
         ];
     }
 }
