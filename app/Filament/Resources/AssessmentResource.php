@@ -68,11 +68,23 @@ class AssessmentResource extends Resource
                 Tables\Columns\TextColumn::make('created_at')->label('Tanggal Input')->date(),
             ])
             ->defaultSort('final_score', 'desc')
+
+            // --- BAGIAN BARU: TOMBOL CETAK REKAP ---
+            ->headerActions([
+                Tables\Actions\Action::make('cetak_rekap')
+                    ->label('Cetak Laporan Ranking (PDF)')
+                    ->icon('heroicon-o-printer')
+                    ->color('success') // Warna Hijau
+                    ->url(route('assessment.rekap.pdf'))
+                    ->openUrlInNewTab(),
+            ])
+            // ---------------------------------------
+
             ->filters([
                 SelectFilter::make('schedule_id')->relationship('schedule', 'name')->label('Filter Periode'),
             ])
             ->actions([
-                Tables\Actions\ViewAction::make(), // PENTING: Tombol Mata (Lihat Detail)
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
                 Tables\Actions\DeleteAction::make(),
             ])

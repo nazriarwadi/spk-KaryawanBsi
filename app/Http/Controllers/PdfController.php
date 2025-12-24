@@ -16,4 +16,20 @@ class PdfController extends Controller
         // Download file dengan nama otomatis
         return $pdf->download('Laporan_Kinerja_' . $record->employee->name . '.pdf');
     }
+
+    public function downloadRekap()
+    {
+        // Ambil semua data penilaian
+        // Urutkan berdasarkan final_score TERBESAR ke terkecil (DESC)
+        $assessments = Assessment::with(['employee', 'schedule'])
+            ->orderBy('final_score', 'desc')
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.assessment_rekap', compact('assessments'));
+
+        // Set ukuran kertas Landscape agar tabel muat
+        $pdf->setPaper('a4', 'landscape');
+
+        return $pdf->download('Laporan_Rekap_Perangkingan.pdf');
+    }
 }

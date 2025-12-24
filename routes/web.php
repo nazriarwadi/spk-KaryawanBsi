@@ -8,3 +8,5 @@ Route::redirect('/', '/admin');
 
 // Route Download PDF (Pastikan user login jika perlu keamanan)
 Route::get('/assessment/{record}/pdf', [PdfController::class, 'downloadAssessment'])->name('assessment.pdf');
+
+Route::get('/assessments/rekap/pdf', [PdfController::class, 'downloadRekap'])->name('assessment.rekap.pdf');
